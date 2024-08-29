@@ -13,6 +13,8 @@ from kivy.metrics import dp, sp
 import random
 import json
 from kivy.uix.dropdown import DropDown
+from kivy.uix.scrollview import ScrollView
+from kivy.uix.gridlayout import GridLayout
 
 def load_dictionary(filename):
     try:
@@ -220,31 +222,42 @@ class TopicSelectionScreen(Screen):
             # Additional logic for mobile interaction can be added here
             pass
 
+
 class TopicSelectionForTranslationScreen(Screen):
     def __init__(self, topics, target_screen, **kwargs):
         super(TopicSelectionForTranslationScreen, self).__init__(**kwargs)
         self.topics = topics
         self.target_screen = target_screen
 
-        self.layout = BoxLayout(orientation="vertical", size_hint=(1, 1))
         # Main layout with white background
+        self.layout = BoxLayout(orientation="vertical", size_hint=(1, 1))
         with self.layout.canvas.before:
             Color(1, 1, 1, 1)
             self.rect = Rectangle(size=self.layout.size, pos=self.layout.pos)
         self.layout.bind(size=self.update_rect, pos=self.update_rect)
 
         # Title label
-        title_label = Label(text="Select a Topic for Translation", color=(0, 0, 0, 1), font_size='24sp', size_hint=(1, 0.1))
+        title_label = Label(text="Select a Topic for Translation", color=(0, 0, 0, 1), font_size='24sp',
+                            size_hint=(1, 0.1))
         self.layout.add_widget(title_label)
+
+        # Create a ScrollView for the topic buttons
+        scroll_view = ScrollView(size_hint=(1, 0.7))  # Take up most of the screen height
+        self.button_container = GridLayout(cols=1, spacing=10, size_hint_y=None)  # Vertical stack of buttons
+        self.button_container.bind(minimum_height=self.button_container.setter('height'))  # Enable dynamic height
 
         # Add existing topics
         self.add_existing_topics()
 
-        # Button layout
+        scroll_view.add_widget(self.button_container)
+        self.layout.add_widget(scroll_view)
+
+        # Button layout for back button
         button_layout = BoxLayout(orientation="horizontal", spacing=20, padding=20, size_hint=(1, 0.2))
 
         # Back button
-        btn_back = Button(text="Back to Main Menu", background_color=(1, 1, 1, 1), color=(0, 0, 0, 1), size_hint=(0.5, 1))
+        btn_back = Button(text="Back to Main Menu", background_color=(1, 1, 1, 1), color=(0, 0, 0, 1),
+                          size_hint=(0.5, 1))
         btn_back.bind(on_press=self.switch_to_main)
         button_layout.add_widget(btn_back)
 
@@ -257,9 +270,10 @@ class TopicSelectionForTranslationScreen(Screen):
 
     def add_existing_topics(self):
         for topic in self.topics.keys():
-            btn_topic = Button(text=topic, background_color=(0.9, 0.9, 0.9, 1), color=(0, 0, 0, 1), size_hint=(1, 0.1))
+            btn_topic = Button(text=topic, background_color=(0.9, 0.9, 0.9, 1), color=(0, 0, 0, 1), size_hint_y=None,
+                               height=50)  # Fixed height for each button
             btn_topic.bind(on_press=self.select_existing_topic)
-            self.layout.add_widget(btn_topic)
+            self.button_container.add_widget(btn_topic)
 
     def select_existing_topic(self, instance):
         topic = instance.text
@@ -268,7 +282,6 @@ class TopicSelectionForTranslationScreen(Screen):
 
     def switch_to_main(self, instance):
         self.manager.current = 'main_screen'
-
 
 
 
