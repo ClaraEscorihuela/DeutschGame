@@ -85,6 +85,8 @@ class MainScreen(Screen):
 
     def switch_to_topic_selection_screen(self, instance):
         self.manager.current = 'topic_selection_screen'
+
+
 class TopicSelectionScreen(Screen):
     def __init__(self, topics, save_callback, **kwargs):
         super(TopicSelectionScreen, self).__init__(**kwargs)
@@ -137,6 +139,17 @@ class TopicSelectionScreen(Screen):
         btn_new_topic.bind(on_press=self.add_new_topic)
         button_layout.add_widget(btn_new_topic)
 
+        # Back to Main Menu button
+        btn_back_to_main = Button(
+            text="Back to Main Menu",
+            background_color=(0.3, 0.3, 1, 1),  # Blue color
+            color=(1, 1, 1, 1),
+            size_hint=(0.5, 1),
+            font_size=sp(18)
+        )
+        btn_back_to_main.bind(on_press=self.switch_to_main)
+        button_layout.add_widget(btn_back_to_main)
+
         # Exit button
         btn_exit = Button(
             text="Exit",
@@ -168,6 +181,18 @@ class TopicSelectionScreen(Screen):
     def add_new_topic(self, instance):
         # Implement the functionality for adding a new topic
         pass
+
+    def switch_to_main(self, instance):
+        self.manager.current = 'main_screen'
+
+    def on_touch_down(self, touch):
+        # Ensure touch events are passed to children
+        super(TopicSelectionScreen, self).on_touch_down(touch)
+
+        # Handle touch interactions if needed (e.g., for dropdowns)
+        if self.collide_point(*touch.pos):
+            # Additional logic for mobile interaction can be added here
+            pass
 
 class TopicSelectionForTranslationScreen(Screen):
     def __init__(self, topics, target_screen, **kwargs):
