@@ -12,6 +12,7 @@ from kivy.uix.spinner import Spinner
 from kivy.metrics import dp, sp
 import random
 import json
+from kivy.uix.dropdown import DropDown
 
 def load_dictionary(filename):
     try:
@@ -41,21 +42,21 @@ class MainScreen(Screen):
         title_label = Label(
             text="Translation Game!",
             color=(0, 0, 0, 1),
-            font_size=sp(24),  # Scaled pixels for adaptive font size
-            size_hint=(1, 0.1),  # 10% of the screen height
-            pos_hint={'center_x': 0.5}  # Centered horizontally
+            font_size=sp(24),
+            size_hint=(1, 0.1),
+            pos_hint={'center_x': 0.5}
         )
         self.main_layout.add_widget(title_label)
 
         # Button layout
         button_layout = BoxLayout(
             orientation="horizontal",
-            spacing=dp(20),  # Density-independent pixels for spacing
-            padding=[dp(10), dp(10), dp(10), dp(10)],  # Padding on all sides
-            size_hint=(1, 0.2)  # 20% of the screen height
+            spacing=dp(20),
+            padding=[dp(10), dp(10), dp(10), dp(10)],
+            size_hint=(1, 0.2)
         )
 
-        # Button definitions with a size hint to ensure adaptability
+        # Button definitions
         buttons = [
             {"text": "Introduce New Word", "background_color": (0.87, 0.63, 0.87, 1)},
             {"text": "English to German", "background_color": (0.48, 0.78, 0.96, 1)},
@@ -68,12 +69,18 @@ class MainScreen(Screen):
                 text=btn_info['text'],
                 background_color=btn_info['background_color'],
                 color=(1, 1, 1, 1),
-                size_hint=(0.25, 1)  # 25% of the width, full height of the button layout
+                size_hint=(0.25, 1)
             )
+
             if btn_info['text'] == "Exit":
                 btn.bind(on_press=App.get_running_app().stop)
-            else:
+            elif btn_info['text'] == "Introduce New Word":
                 btn.bind(on_press=self.switch_to_topic_selection_screen)
+            elif btn_info['text'] == "English to German":
+                btn.bind(on_press=self.switch_to_topic_selection_for_ge_to_en)
+            elif btn_info['text'] == "German to English":
+                btn.bind(on_press=self.switch_to_topic_selection_for_ge_to_en)
+
             button_layout.add_widget(btn)
 
         self.main_layout.add_widget(button_layout)
@@ -86,6 +93,11 @@ class MainScreen(Screen):
     def switch_to_topic_selection_screen(self, instance):
         self.manager.current = 'topic_selection_screen'
 
+    def switch_to_topic_selection_for_ge_to_en(self, instance):
+        self.manager.current = 'topic_selection_for_ge_to_en_screen'
+
+    def switch_to_topic_selection_for_en_to_ge(self, instance):
+        self.manager.current = 'topic_selection_for_en_to_ge_screen'
 
 class TopicSelectionScreen(Screen):
     def __init__(self, topics, save_callback, **kwargs):
@@ -109,17 +121,30 @@ class TopicSelectionScreen(Screen):
         )
         self.layout.add_widget(self.title_label)
 
-        # Dropdown (Spinner) for topic selection
-        self.spinner = Spinner(
+        # Dropdown for topic selection using DropDown widget
+        self.dropdown = DropDown()
+        for topic in self.topics.keys():
+            btn = Button(
+                text=topic,
+                size_hint_y=None,
+                height=dp(44),
+                background_color=(0.87, 0.87, 0.87, 0.5),
+                color=(0, 0, 0, 1),
+                font_size=sp(20)
+            )
+            btn.bind(on_release=lambda btn: self.select_existing_topic(btn.text))
+            self.dropdown.add_widget(btn)
+
+        # Main button to trigger the dropdown
+        self.main_button = Button(
             text='Choose a topic',
-            values=list(self.topics.keys()),
             size_hint=(1, 0.1),
             background_color=(0.87, 0.87, 0.87, 0.5),
             color=(0, 0, 0, 1),
             font_size=sp(20)
         )
-        self.spinner.bind(text=self.select_existing_topic)
-        self.layout.add_widget(self.spinner)
+        self.main_button.bind(on_release=self.dropdown.open)
+        self.layout.add_widget(self.main_button)
 
         # Bottom layout for buttons
         button_layout = BoxLayout(
@@ -171,12 +196,13 @@ class TopicSelectionScreen(Screen):
         self.rect.pos = self.layout.pos
         self.rect.size = self.layout.size
 
-    def select_existing_topic(self, spinner, text):
+    def select_existing_topic(self, text):
         # Handle the topic selection
         if text != 'Choose a topic':  # Make sure a valid topic is selected
             self.manager.get_screen('new_word_screen').set_topic(text)
             self.manager.current = 'new_word_screen'
-            self.spinner.text = 'Choose a topic'  # Reset the spinner text
+            self.main_button.text = 'Choose a topic'  # Reset the main button text
+        self.dropdown.dismiss()
 
     def add_new_topic(self, instance):
         # Implement the functionality for adding a new topic
@@ -382,34 +408,68 @@ class NewWordScreen(Screen):
         self.manager.current = 'main_screen'
 
 
-
 class TranslateGeToEnScreen(Screen):
     def __init__(self, topics, **kwargs):
         super(TranslateGeToEnScreen, self).__init__(**kwargs)
         self.topics = topics
         self.current_topic = None
 
-        self.layout = BoxLayout(orientation="vertical")
+        self.layout = BoxLayout(orientation="vertical", padding=dp(20), spacing=dp(10))
 
         with self.layout.canvas.before:
-            Color(1, 1, 1, 1)  # White background
+            Color(1, 1, 1, 1)
             self.rect = Rectangle(size=self.layout.size, pos=self.layout.pos)
         self.layout.bind(size=self.update_rect, pos=self.update_rect)
 
-        self.question_label = Label(text="", color=(0, 0, 0, 1))
+        # Label for the question
+        self.question_label = Label(
+            text="hola",
+            color=(0, 0, 0, 1),
+            font_size=sp(24),
+            halign="center",
+            size_hint=(1, 0.2)
+        )
         self.layout.add_widget(self.question_label)
 
-        self.answer_input = TextInput(multiline=False, background_color=(1, 1, 1, 1), foreground_color=(0, 0, 0, 1))
+        # Text input for the answer
+        self.answer_input = TextInput(
+            multiline=False,
+            background_color=(1, 1, 1, 1),
+            foreground_color=(0, 0, 0, 1),
+            font_size=sp(18),
+            size_hint=(1, 0.2)
+        )
         self.layout.add_widget(self.answer_input)
 
-        self.submit_button = Button(text="Submit", background_color=(0.9, 0.9, 0.9, 1), color=(0, 0, 0, 1))
+        # Submit button
+        self.submit_button = Button(
+            text="Submit",
+            background_color=(0.9, 0.9, 0.9, 1),
+            color=(0, 0, 0, 1),
+            size_hint=(1, 0.2),
+            font_size=sp(18)
+        )
         self.submit_button.bind(on_press=self.check_answer)
         self.layout.add_widget(self.submit_button)
 
-        self.result_label = Label(text="", color=(0, 0, 0, 1))
+        # Label for the result
+        self.result_label = Label(
+            text="",
+            color=(0, 0, 0, 1),
+            font_size=sp(18),
+            halign="center",
+            size_hint=(1, 0.2)
+        )
         self.layout.add_widget(self.result_label)
 
-        btn_back = Button(text="Back to Main Menu", background_color=(1, 1, 1, 1), color=(0, 0, 0, 1))
+        # Back button to return to the main menu
+        btn_back = Button(
+            text="Back to Main Menu",
+            background_color=(1, 1, 1, 1),
+            color=(0, 0, 0, 1),
+            size_hint=(1, 0.2),
+            font_size=sp(18)
+        )
         btn_back.bind(on_press=self.switch_to_main)
         self.layout.add_widget(btn_back)
 
@@ -427,16 +487,25 @@ class TranslateGeToEnScreen(Screen):
         self.new_question()
 
     def on_enter(self, *args):
+        self.new_question()
         if self.current_topic:
             self.new_question()
 
     def new_question(self):
-        translations = self.topics[self.current_topic]
-        self.correct_key = random.choice(list(translations.keys()))
-        self.current_value = translations[self.correct_key]
-        self.question_label.text = f"What is the English translation of '{self.correct_key}'?"
-        self.answer_input.text = ""
-        self.result_label.text = ""
+        if self.current_topic:
+            translations = self.topics[self.current_topic]
+            self.correct_key = random.choice(list(translations.keys()))
+            self.current_value = translations[self.correct_key]
+
+            # Test: Print to console for debugging
+            print(f"Selected Word: {self.correct_key} - Translation: {self.current_value}")
+
+            # Setting the word to be translated
+            self.question_label.text = f"What is the English translation of '{self.correct_key}'?"
+            self.answer_input.text = ""
+            self.result_label.text = ""
+        else:
+            self.question_label.text = "No topic selected!"
 
     def check_answer(self, instance):
         user_input = self.answer_input.text.strip()
@@ -448,13 +517,10 @@ class TranslateGeToEnScreen(Screen):
             self.result_label.text = "Incorrect, try again."
 
     def schedule_new_question(self):
-        self.result_label.text = "Correct!"
-        self.answer_input.text = ""
         self.new_question()
 
     def switch_to_main(self, instance):
         self.manager.current = 'main_screen'
-
 class TranslateEnToGeScreen(Screen):
     def __init__(self, topics, **kwargs):
         super(TranslateEnToGeScreen, self).__init__(**kwargs)
